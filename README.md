@@ -1,112 +1,71 @@
 # CDC/NHANES Analysis Pipeline
 
-This repository downloads and analyzes public CDC/NHANES data.
+Reusable Python pipeline for downloading public CDC/NHANES files and running analysis modules.
 
-The goal is to make future NHANES analyses easier: the download process, local folder structure, and result-writing process are already set up, so new analyses can reuse the same pipeline.
+The current analysis computes the NHANES 2017-2018 HbA1c/A1C mean using the glycohemoglobin lab file and MEC exam weights.
 
-The current example analysis calculates the mean HbA1c/A1C value for the NHANES 2017-2018 cycle.
+## Setup
 
-## What This Project Does
-
-When you run the project, it will:
-
-1. Download the required NHANES files from the CDC website.
-2. Save the downloaded files under `data\raw\cdc_nhanes\`.
-3. Run the selected analysis.
-4. Save the results under `outputs\cdc_nhanes\`.
-
-The `data\raw\` and `outputs\` folders are generated locally. They are not uploaded to GitHub.
-
-## First-Time Setup
-
-If you are not comfortable with Git, you can download this repository as a ZIP file:
-
-1. Open the GitHub repository page.
-2. Click the green `Code` button.
-3. Click `Download ZIP`.
-4. Unzip the folder on your computer.
-
-Then open PowerShell in the project folder and run:
+Run from the project root:
 
 ```powershell
 .\scripts\bootstrap_python.ps1
 ```
 
-This creates a project-specific Python environment inside the folder. It does not require you to change your system PATH, and it does not depend on a system-wide Python installation.
+This creates a local Python runtime and virtual environment under `.python\` and `.venv\`, then installs `requirements.txt`.
 
-If PowerShell blocks the script, run this command in the same PowerShell window:
+If PowerShell blocks local scripts, run this once in the same terminal session:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 
-Then run the setup command again:
-
-```powershell
-.\scripts\bootstrap_python.ps1
-```
-
-## Run the Current Analysis
-
-Run the HbA1c/A1C mean analysis:
+## Run
 
 ```powershell
 .\scripts\run_cdc_nhanes.ps1 hba1c-mean
 ```
 
-If it works, you should see output similar to this:
+Equivalent Python command:
 
-```text
-CDC/NHANES 2017-2018 HbA1c/A1C Mean
-Valid sample size: 6,045
-Unweighted mean:   5.7696
-Weighted mean:     5.6377
+```powershell
+.\.venv\Scripts\python.exe .\run_cdc_nhanes.py hba1c-mean
 ```
 
-The result files will be saved here:
-
-```text
-outputs\cdc_nhanes\
-```
-
-## Download the Data Again
-
-Usually, you do not need to download the data again. The project will reuse files that already exist locally.
-
-To force a fresh download from the CDC website, run:
+Force a fresh CDC download:
 
 ```powershell
 .\scripts\run_cdc_nhanes.ps1 hba1c-mean --force-download
 ```
 
-## Check That the Analysis Still Works
+Downloaded source files are cached under `data\raw\cdc_nhanes\`. Analysis outputs are written under `outputs\cdc_nhanes\`. Both directories are generated locally and ignored by git.
 
-Run the test script:
+## Test
 
 ```powershell
 .\.venv\Scripts\python.exe .\test_hba1c_mean.py
 ```
 
-If you see `mean test passed`, the current HbA1c/A1C analysis is producing the expected result.
+Expected current result:
 
-## Important Files and Folders
+```text
+Valid sample size: 6,045
+Unweighted mean:   5.7696
+Weighted mean:     5.6377
+```
 
-- `scripts\bootstrap_python.ps1`: Sets up the local Python environment.
-- `scripts\run_cdc_nhanes.ps1`: The easiest way to run an analysis.
-- `run_cdc_nhanes.py`: The main Python entry point.
-- `cdc_nhanes\nhanes.py`: Defines NHANES files and handles downloads.
-- `cdc_nhanes\analyses\`: Stores individual analysis modules.
-- `test_hba1c_mean.py`: Checks the current HbA1c/A1C analysis.
-- `data\raw\cdc_nhanes\`: Stores downloaded CDC/NHANES source files.
-- `outputs\cdc_nhanes\`: Stores generated analysis results.
+## Project Layout
 
-## Adding a New Analysis Later
+- `cdc_nhanes\nhanes.py`: NHANES cycle/file definitions, download helpers, and XPT reader.
+- `cdc_nhanes\analyses\`: analysis modules.
+- `cdc_nhanes\analyses\hba1c_mean.py`: current HbA1c/A1C mean analysis.
+- `run_cdc_nhanes.py`: CLI entry point.
+- `scripts\`: PowerShell setup and run wrappers.
+- `test_hba1c_mean.py`: smoke test for the current analysis.
 
-When adding a new CDC/NHANES analysis, use this pattern:
+## Adding Analyses
 
-1. Add a new analysis file under `cdc_nhanes\analyses\`.
-2. Reuse the download helpers in `cdc_nhanes\nhanes.py`.
-3. Register the new analysis name in `run_cdc_nhanes.py`.
-4. Add a small test script so the result can be checked later.
-
-This keeps the repository easier to maintain as more analyses are added.
+1. Add a module under `cdc_nhanes\analyses\`.
+2. Reuse `download_nhanes_files` from `cdc_nhanes\nhanes.py`.
+3. Register the analysis in `run_cdc_nhanes.py`.
+4. Add a focused test or smoke script with expected outputs.
